@@ -1,11 +1,10 @@
-name: Publish Docker image
+name: Docker
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   push_to_registry:
@@ -31,10 +30,8 @@ jobs:
         with:
           images: ghcr.io/yukishidori/bridge-bot
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag
             type=sha,format=long
 
       - name: Set up Docker Buildx
