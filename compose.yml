@@ -1,6 +1,6 @@
 services:
   bridge-bot:
-    image: "ghcr.io/skykings-network/bridge-bot:latest"
+    image: "ghcr.io/yukishidori/bridge-bot:latest"
     restart: unless-stopped
     container_name: bridge-bot  # optional: set a custom container name
     volumes:
