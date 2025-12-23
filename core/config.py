@@ -162,6 +162,10 @@ class ConfigObject(metaclass=_ConfigObject, base_key=""):
                     raise InvalidConfig(f"Missing required key '{key}' in section '{cls.BASE_KEY}'")
                 data[key] = value.default
             else:
+                # Store the original string value for Discord IDs to prevent rounding
+                if cls.BASE_KEY == 'discord' and isinstance(data[key], str) and data[key].isdigit():
+                    # Keep the original string value in the config
+                    setattr(cls, f'_{key}_str', data[key])
                 data[key] = value.validate(data[key])
             setattr(cls, key, data[key])
 
@@ -172,9 +176,14 @@ class ConfigObject(metaclass=_ConfigObject, base_key=""):
     @classmethod
     def __setitem__(cls, key, value):
         cls.keys[key].validate(value)
-        config[cls.BASE_KEY][key] = value
+        # If we have a stored string value for this key, use it when saving to config
+        if hasattr(cls, f'_{key}_str'):
+            config[cls.BASE_KEY][key] = getattr(cls, f'_{key}_str')
+        else:
+            config[cls.BASE_KEY][key] = value
+        # Write the config back to file
         with open("config.json", "w") as f:
-            json.dump(config, f, indent=4)
+            json.dump(config, f, indent=4, ensure_ascii=False)
 
     @classmethod
     def __getattr__(cls, item):
