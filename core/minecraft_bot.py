@@ -74,12 +74,8 @@ class MinecraftBotManager:
 
     def send_to_discord(self, message):
         if SettingsConfig.printChat:
-            print(f"{Color.GREEN}Minecraft{Color.RESET} > Dispatching to Discord: {message}")
-        is_officer = message.startswith("Officer >")
-        asyncio.run_coroutine_threadsafe(
-            self.client.send_discord_message(message, is_officer=is_officer),
-            self.client.loop
-        )
+            print(f"{Color.GREEN}Minecraft{Color.RESET} > Dispatching to Discord")
+        asyncio.run_coroutine_threadsafe(self.client.send_discord_message(message), self.client.loop)
 
     def oncommands(self):
         message_buffer = []

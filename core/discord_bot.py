@@ -44,7 +44,7 @@ class DiscordBridgeBot(commands.Bot):
                 guild_messages=True, message_content=True, guilds=True, members=True,
             ),
             help_command=None,
-            activity=discord.Activity(type=discord.ActivityType.watching, name=f"Over Lost Superior"),
+            activity=discord.Game(name="Guild Bridge Bot"),
         )
         self.owner_id = DiscordConfig.ownerId
         self.mineflayer_bot = None
@@ -558,64 +558,14 @@ class DiscordBridgeBot(commands.Bot):
     # hypixel_guild_member_invite
     # hypixel_guild_member_invite_failed
     # hypixel_guild_message_send_failed
-    async def send_discord_message(self, message, is_officer=False):
+    async def send_discord_message(self, message):
         try:
             if "Unknown command" in message:
                 self.dispatch("minecraft_pong")
-
-            # Check if this is an officer chat message (from in-game)
-            if message.startswith("Officer >"):
+            if message.startswith("Guild >"):
                 if ":" not in message:
-                    # Handle system messages in officer chat (joins, leaves, etc.)
-                    message = message.replace("Officer >", "")
-                    if "[VIP]" in message or "[VIP+]" in message or "[MVP]" in message or "[MVP+]" in message or "[MVP++]" in message:
-                        if "]:" in message:
-                            memberusername = message.split()[1]
-                        else:
-                            memberusername = message.split()[1][:-1]
-                    else:
-                        if "]:" in message:
-                            memberusername = message.split()[0]
-                        else:
-                            memberusername = message.split()[0][:-1]
-
-                    if self.mineflayer_bot.bot.username in memberusername:
-                        return
-
-                    # Send to officer channel with [OFFICER] prefix
-                    if " joined." in message:
-                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0x56F98A)
-                        embed.set_author(name=f"[OFFICER] {message}", icon_url="https://www.mc-heads.net/avatar/" + memberusername)
-                    else:
-                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0xFF6347)
-                        embed.set_author(name=f"[OFFICER] {message}", icon_url="https://www.mc-heads.net/avatar/" + memberusername)
-
-                    await self.send_message(embed=embed, officer=True)
-                else:
-                    # Handle regular officer chat messages
-                    match = regex.match(message)
-                    if not match:
-                        return
-
-                    username, message = match.groups()
-                    if self.mineflayer_bot.bot.username in username:
-                        return
-
-                    # Clean up the username
-                    if "[" in username:
-                        username = username.split("]")[1].strip()
-                    else:
-                        username = username.strip()
-
-                    # Send to officer channel
-                    self.dispatch("hypixel_guild_officer_message", username, message)
-                    await self.send_user_message(username, message, officer=True)
-
-            # Handle guild chat messages
-            elif message.startswith("Guild >"):
-                if ":" not in message:
-                    # Handle system messages in guild chat (joins, leaves, etc.)
                     message = message.replace("Guild >", "")
+                    # Member join/leave game notification
                     if "[VIP]" in message or "[VIP+]" in message or "[MVP]" in message or "[MVP+]" in message or "[MVP++]" in message:
                         if "]:" in message:
                             memberusername = message.split()[1]
@@ -626,46 +576,28 @@ class DiscordBridgeBot(commands.Bot):
                             memberusername = message.split()[0]
                         else:
                             memberusername = message.split()[0][:-1]
-
                     if self.mineflayer_bot.bot.username in memberusername:
                         return
-
-                    # Send to guild channel
                     if " joined." in message:
                         embed = Embed(timestamp=discord.utils.utcnow(), colour=0x56F98A)
                         embed.set_author(name=message, icon_url="https://www.mc-heads.net/avatar/" + memberusername)
                     else:
                         embed = Embed(timestamp=discord.utils.utcnow(), colour=0xFF6347)
                         embed.set_author(name=message, icon_url="https://www.mc-heads.net/avatar/" + memberusername)
-
+                    await self.send_debug_message("Sending player connection message")
                     await self.send_message(embed=embed)
                 else:
-                    # Handle regular guild chat messages
-                    match = regex.match(message)
-                    if not match:
-                        return
-
-                    username, message = match.groups()
+                    username, message = regex.match(message).groups()
                     if self.mineflayer_bot.bot.username in username:
                         return
-
-                    # Clean up the username
-                    if "[" in username:
-                        username = username.split("]")[1].strip()
+                    if username.startswith("["):
+                        username = username.split(" ")[1]
                     else:
-                        username = username.strip()
+                        username = username.split(" ")[0]
+                    username = username.strip()
 
-                    # Check if the message is from a guildmaster and forward to officer chat if needed
-                    is_guildmaster = any(role in username for role in ["[GM]", "[Guild Master]"])
-
-                    if is_guildmaster:
-                        # Send to officer channel if from guildmaster
-                        self.dispatch("hypixel_guild_officer_message", username, message)
-                        await self.send_user_message(username, message, officer=True)
-                    else:
-                        # Regular guild message
-                        self.dispatch("hypixel_guild_message", username, message)
-                        await self.send_user_message(username, message)
+                    self.dispatch("hypixel_guild_message", username, message)
+                    await self.send_user_message(username, message)
 
             elif message.startswith("Officer >"):
                 channel = self.get_channel(DiscordConfig.officerChannel)
