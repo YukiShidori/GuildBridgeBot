@@ -44,7 +44,7 @@ class DiscordBridgeBot(commands.Bot):
                 guild_messages=True, message_content=True, guilds=True, members=True,
             ),
             help_command=None,
-            activity=discord.Game(name="Guild Bridge Bot"),
+            activity=discord.Activity(type=discord.ActivityType.watching, name=f"Over Lost Superior"),
         )
         self.owner_id = DiscordConfig.ownerId
         self.mineflayer_bot = None
