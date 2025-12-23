@@ -127,20 +127,15 @@ class MinecraftBotManager:
             if self.bot.username is None:
                 return
 
-            if SettingsConfig.printChat or True:  # Always print chat for debugging
-                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message: {repr(message)}")
-                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message type: {type(message)}")
-                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message split: {message.split()}")
+            if SettingsConfig.printChat:
+                print(f"{Color.GREEN}Minecraft{Color.RESET} > Chat: {message}")
 
             # Check for party join messages (handle different formats)
             join_phrases = ['has joined the party.', 'joined the party.', 'joined the group.']
             if any(phrase.lower() in message.lower() for phrase in join_phrases):
                 try:
-                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected join message! Full message: {message}")
-
                     # Try different ways to extract the username
                     words = message.split()
-                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Split message words: {words}")
 
                     # Try to find the username (it's usually the first word before "joined")
                     username = None
@@ -159,10 +154,8 @@ class MinecraftBotManager:
                         username = username.strip()
 
                     if username and username != self.bot.username:  # Don't trigger on our own join
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected party join: '{message}'")
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Extracted username: {username}")
-                    else:
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Could not extract valid username from message")
+                        if SettingsConfig.printChat:
+                            print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected party join from {username}")
 
                     # Run the warp sequence in a separate task
                     asyncio.run_coroutine_threadsafe(

@@ -301,7 +301,6 @@ class Bridge(commands.Cog):
             )
 
     @commands.command()
-    @has_command_role
     async def warpout(self, ctx, username):
         """Warps a player out of their current lobby."""
         if not self.bot.mineflayer_bot:
