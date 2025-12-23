@@ -320,27 +320,27 @@ class DiscordBridgeBot(commands.Bot):
 
                 # List of Sun Tzu quotes from The Art of War
                 sun_tzu_quotes = [
-                    "All warfare is based on deception.",
-                    "The supreme art of war is to subdue the enemy without fighting.",
-                    "If you know the enemy and know yourself, you need not fear the result of a hundred battles.",
-                    "Appear weak when you are strong, and strong when you are weak.",
-                    "The greatest victory is that which requires no battle.",
-                    "Let your plans be dark and impenetrable as night, and when you move, fall like a thunderbolt.",
-                    "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.",
-                    "In the midst of chaos, there is also opportunity.",
-                    "The art of war is of vital importance to the state.",
-                    "Opportunities multiply as they are seized.",
-                    "All men can see these tactics whereby I conquer, but what none can see is the strategy out of which victory is evolved.",
-                    "The general who wins the battle makes many calculations in his temple before the battle is fought.",
-                    "There is no instance of a nation benefiting from prolonged warfare.",
-                    "The supreme art of war is to subdue the enemy without fighting.",
-                    "He will win who knows when to fight and when not to fight."
+                    "All warfare is based on deception",
+                    "The supreme art of war is to subdue the enemy without fighting",
+                    "If you know the enemy and know yourself, you need not fear the result of a hundred battles",
+                    "Appear weak when you are strong, and strong when you are weak",
+                    "The greatest victory is that which requires no battle",
+                    "Let your plans be dark and impenetrable as night, and when you move, fall like a thunderbolt",
+                    "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win",
+                    "In the midst of chaos, there is also opportunity",
+                    "The art of war is of vital importance to the state",
+                    "Opportunities multiply as they are seized",
+                    "All men can see these tactics whereby I conquer, but what none can see is the strategy out of which victory is evolved",
+                    "The general who wins the battle makes many calculations in his temple before the battle is fought",
+                    "There is no instance of a nation benefiting from prolonged warfare",
+                    "He will win who knows when to fight and when not to fight"
                 ]
 
-                # Select a random quote and send it to the party chat
+                # Select a random quote and send it to the party chat with attribution
                 import random
                 quote = random.choice(sun_tzu_quotes)
-                await self.mineflayer_bot.chat(f"/pc {quote}")
+                formatted_quote = f'"{quote}" - Sun Tzu, The Art of War'
+                await self.mineflayer_bot.chat(f"/pc {formatted_quote}")
                 await asyncio.sleep(1)  # Give time for the message to be sent
 
                 # Disband the party
