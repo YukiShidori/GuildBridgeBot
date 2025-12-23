@@ -87,23 +87,6 @@ class MinecraftBotManager:
             self._online = True
             self.client.dispatch("minecraft_ready")
 
-        @javascript.On(self.bot, "messagestr")
-        def handle_party_join(this, message, *args):
-            # Check if this is a party join message
-            if 'has joined the party.' in message:
-                try:
-                    # Extract the username from the message
-                    username = message.split(' ')[0]
-                    if username != self.bot.username:  # Don't trigger on our own join
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > {username} joined the party, handling warpout...")
-                        # Run the warp sequence in a separate task
-                        asyncio.run_coroutine_threadsafe(
-                            self.client._handle_party_join(username),
-                            self.client.loop
-                        )
-                except Exception as e:
-                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Error handling party join: {e}")
-                    traceback.print_exc()
 
         @javascript.On(self.bot, "end")
         def end(this, reason):
@@ -141,17 +124,62 @@ class MinecraftBotManager:
         @javascript.On(self.bot, "messagestr")
         def chat(this, message, _, raw_message, *args):
             if self.bot.username is None:
-                pass
-            else:
-                if SettingsConfig.printChat:
-                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Chat: {message}")
-                if message.startswith("Guild > " + self.bot.username) or message.startswith(
-                        "Officer > " + self.bot.username
-                ):
-                    return
-                if message.startswith("Guild >") or message.startswith("Officer >"):
-                    self.send_to_discord(message)
-                    return
+                return
+
+            if SettingsConfig.printChat or True:  # Always print chat for debugging
+                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message: {repr(message)}")
+                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message type: {type(message)}")
+                print(f"{Color.GREEN}Minecraft{Color.RESET} > Raw message split: {message.split()}")
+
+            # Check for party join messages (handle different formats)
+            join_phrases = ['has joined the party.', 'joined the party.', 'joined the group.']
+            if any(phrase.lower() in message.lower() for phrase in join_phrases):
+                try:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected join message! Full message: {message}")
+
+                    # Try different ways to extract the username
+                    words = message.split()
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Split message words: {words}")
+
+                    # Try to find the username (it's usually the first word before "joined")
+                    username = None
+                    if 'joined' in words:
+                        join_index = words.index('joined')
+                        if join_index > 0:
+                            username = words[join_index - 1]
+
+                    # Fallback to first word if above method fails
+                    if not username and words:
+                        username = words[0]
+
+                    # Clean up username (remove formatting codes if any)
+                    if username:
+                        username = re.sub(r'§[0-9a-fklmnor]', '', username)  # Remove Minecraft color codes
+                        username = username.strip()
+
+                    if username and username != self.bot.username:  # Don't trigger on our own join
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected party join: '{message}'")
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Extracted username: {username}")
+                    else:
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Could not extract valid username from message")
+
+                    # Run the warp sequence in a separate task
+                    asyncio.run_coroutine_threadsafe(
+                        self.client._handle_party_join(username),
+                        self.client.loop
+                    )
+                except Exception as e:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Error handling party join: {e}")
+                    traceback.print_exc()
+                return
+
+            # Handle guild and officer chat
+            if message.startswith("Guild > " + self.bot.username) or message.startswith("Officer > " + self.bot.username):
+                return
+
+            if message.startswith("Guild >") or message.startswith("Officer >"):
+                self.send_to_discord(message)
+                return
 
                 # Online Command / GEXP Command
                 if (
