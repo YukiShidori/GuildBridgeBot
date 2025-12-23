@@ -169,19 +169,23 @@ class MinecraftBotManager:
 
             # Handle guild and officer chat
             if message.startswith("Guild > " + self.bot.username) or message.startswith("Officer > " + self.bot.username):
-                # Handle commands directed at the bot
-                command_text = message.split('> ' + self.bot.username, 1)[1].strip()
-                if command_text.lower().startswith('warpout '):
-                    username = command_text[8:].strip()
-                    if username:
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Processing in-game warpout command for {username}")
-                        asyncio.run_coroutine_threadsafe(
-                            self.client.send_warpout(username),
-                            self.client.loop
-                        )
                 return
 
             if message.startswith("Guild >") or message.startswith("Officer >"):
+                # Check for warpout command
+                parts = message.split()
+                if len(parts) >= 3 and (parts[1] == "!warpout" or parts[1].lower() == "warpout"):
+                    username = parts[2]
+                    if SettingsConfig.printChat:
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected in-game warpout command for {username}")
+                    # Run the warpout sequence in a separate task
+                    asyncio.run_coroutine_threadsafe(
+                        self.client._handle_warpout_command(username, message.split("> ")[0].replace(" ", "").lower() == "officer"),
+                        self.client.loop
+                    )
+                    return
+
+                # If not a command, send to Discord
                 self.send_to_discord(message)
                 return
 

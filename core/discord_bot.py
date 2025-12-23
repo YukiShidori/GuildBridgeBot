@@ -259,6 +259,57 @@ class DiscordBridgeBot(commands.Bot):
             traceback.print_exc()
         print(f"{Color.CYAN}Discord{Color.RESET} > Warpout processor has been stopped.")
 
+    async def _handle_warpout_command(self, username, is_officer_chat=False):
+        """Handle warpout command from in-game chat."""
+        if not self.mineflayer_bot:
+            await self.send_message("Bot is not connected to Minecraft!", officer=is_officer_chat)
+            return
+
+        if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
+            await self.send_message("A warpout is already in progress. Please wait until it finishes.", officer=is_officer_chat)
+            return
+
+        # Send initial message
+        await self.send_message(f"Attempting to warp out {username}...", officer=is_officer_chat)
+
+        try:
+            # Create future for tracking warpout status
+            self._current_warpout_future = asyncio.Future()
+
+            # Send party invite to the player
+            await self.mineflayer_bot.chat(f"/p {username}")
+
+            try:
+                # Wait for the player to join the party or timeout after 30 seconds
+                success = await asyncio.wait_for(
+                    self._current_warpout_future,
+                    timeout=30.0
+                )
+
+                if success:
+                    await self.send_message(f"Successfully warped out {username}!", officer=is_officer_chat)
+                else:
+                    await self.send_message(f"Could not warp out {username}.", officer=is_officer_chat)
+
+            except asyncio.TimeoutError:
+                await self.send_message(f"Timed out while trying to warp out {username}.", officer=is_officer_chat)
+                if not self._current_warpout_future.done():
+                    self._current_warpout_future.set_result((False, "timeout"))
+                await self.mineflayer_bot.chat("/p leave")
+
+        except Exception as e:
+            print(f"{Color.CYAN}Discord{Color.RESET} > Error in warpout command: {e}")
+            traceback.print_exc()
+            if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
+                self._current_warpout_future.set_result((False, str(e)))
+            await self.send_message(f"An error occurred while trying to warp out {username}.", officer=is_officer_chat)
+        finally:
+            # Clean up
+            if hasattr(self, '_current_warpout_future'):
+                if not self._current_warpout_future.done():
+                    self._current_warpout_future.cancel()
+                self._current_warpout_future = None
+
     async def _handle_party_join(self, username):
         """Handle when a player joins the party."""
         if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
@@ -266,6 +317,31 @@ class DiscordBridgeBot(commands.Bot):
                 # Warp the player
                 await self.mineflayer_bot.chat("/p warp")
                 await asyncio.sleep(1)  # Give time for warp to complete
+
+                # List of Sun Tzu quotes from The Art of War
+                sun_tzu_quotes = [
+                    "All warfare is based on deception.",
+                    "The supreme art of war is to subdue the enemy without fighting.",
+                    "If you know the enemy and know yourself, you need not fear the result of a hundred battles.",
+                    "Appear weak when you are strong, and strong when you are weak.",
+                    "The greatest victory is that which requires no battle.",
+                    "Let your plans be dark and impenetrable as night, and when you move, fall like a thunderbolt.",
+                    "Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.",
+                    "In the midst of chaos, there is also opportunity.",
+                    "The art of war is of vital importance to the state.",
+                    "Opportunities multiply as they are seized.",
+                    "All men can see these tactics whereby I conquer, but what none can see is the strategy out of which victory is evolved.",
+                    "The general who wins the battle makes many calculations in his temple before the battle is fought.",
+                    "There is no instance of a nation benefiting from prolonged warfare.",
+                    "The supreme art of war is to subdue the enemy without fighting.",
+                    "He will win who knows when to fight and when not to fight."
+                ]
+
+                # Select a random quote and send it to the party chat
+                import random
+                quote = random.choice(sun_tzu_quotes)
+                await self.mineflayer_bot.chat(f"/pc {quote}")
+                await asyncio.sleep(1)  # Give time for the message to be sent
 
                 # Disband the party
                 await self.mineflayer_bot.chat("/p disband")
