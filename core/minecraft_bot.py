@@ -23,6 +23,7 @@ class MinecraftBotManager:
         self.auto_restart = True
         self._online = False
         self._starting = False
+        self._afk_detected = False
         if SettingsConfig.printChat:
             print(f"{Color.GREEN}Minecraft{Color.RESET} > {Color.YELLOW}[WARNING]{Color.RESET} Chat logging is enabled!")
 
@@ -34,6 +35,19 @@ class MinecraftBotManager:
 
     def is_starting(self):
         return self._starting
+
+    async def _send_lobby_command(self):
+        """Helper method to send the lobby command after a delay"""
+        try:
+            await asyncio.sleep(10)  # Wait 10 seconds
+            if not self._online:  # Don't send if bot is no longer online
+                return
+            if SettingsConfig.printChat:
+                print(f"{Color.GREEN}Minecraft{Color.RESET} > Sending /lobby command")
+            await self.chat("/lobby")
+            self._afk_detected = False
+        except Exception as e:
+            print(f"{Color.GREEN}Minecraft{Color.RESET} > Error in _send_lobby_command: {e}")
 
     async def chat(self, message):
         try:
@@ -129,6 +143,18 @@ class MinecraftBotManager:
 
             if SettingsConfig.printChat:
                 print(f"{Color.GREEN}Minecraft{Color.RESET} > Chat: {message}")
+
+            # Check for AFK message
+            if "You are AFK. Move around to return from AFK." in message and not self._afk_detected:
+                self._afk_detected = True
+                if SettingsConfig.printChat:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > AFK detected, will send /lobby in 10 seconds")
+                # Schedule the lobby command to run after a delay
+                asyncio.run_coroutine_threadsafe(
+                    self._send_lobby_command(),
+                    self.client.loop
+                )
+                return
 
             # Check for party join messages (handle different formats)
             join_phrases = ['has joined the party.', 'joined the party.', 'joined the group.']
