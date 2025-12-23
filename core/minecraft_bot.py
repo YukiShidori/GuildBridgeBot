@@ -71,11 +71,16 @@ class MinecraftBotManager:
                 traceback.print_exc()
                 raise
 
-
     def send_to_discord(self, message):
         if SettingsConfig.printChat:
             print(f"{Color.GREEN}Minecraft{Color.RESET} > Dispatching to Discord")
         asyncio.run_coroutine_threadsafe(self.client.send_discord_message(message), self.client.loop)
+
+    async def handle_afk(self) -> None:
+        """Handle AFK detection by waiting and sending lobby command."""
+        await asyncio.sleep(10)
+        self.bot.chat("/lobby")
+        print(f"{Color.GREEN}Minecraft{Color.RESET} > Sent /lobby command after AFK detection")
 
     def oncommands(self):
         message_buffer = []
@@ -87,7 +92,6 @@ class MinecraftBotManager:
                 print(f"{Color.GREEN}Minecraft{Color.RESET} > Bot is logged in as", self.bot.username)
             self._online = True
             self.client.dispatch("minecraft_ready")
-
 
         @javascript.On(self.bot, "end")
         def end(this, reason):
@@ -123,12 +127,24 @@ class MinecraftBotManager:
             self.client.dispatch("minecraft_error")
 
         @javascript.On(self.bot, "messagestr")
-        def chat(this, message, _, raw_message, *args):
+        async def chat(this, message, _, raw_message, *args):
             if self.bot.username is None:
                 return
 
             if SettingsConfig.printChat:
                 print(f"{Color.GREEN}Minecraft{Color.RESET} > Chat: {message}")
+
+            # Remove formatting codes from the message
+            clean_message = re.sub(r"§[0-9a-fk-or]", "", message)
+
+            # Check if the message is from the server (no sender)
+            if not raw_message.startswith("<"):
+                # Check if the message contains the AFK notification
+                if "You are AFK. Move around to return from AFK." in clean_message:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > AFK detected. Will send /lobby in 10 seconds...")
+                    # Wait 10 seconds in the background
+                    asyncio.create_task(self.handle_afk())
+                    return
 
             # Check for party join messages (handle different formats)
             join_phrases = ['has joined the party.', 'joined the party.', 'joined the group.']
