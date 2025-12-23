@@ -87,6 +87,24 @@ class MinecraftBotManager:
             self._online = True
             self.client.dispatch("minecraft_ready")
 
+        @javascript.On(self.bot, "messagestr")
+        def handle_party_join(this, message, *args):
+            # Check if this is a party join message
+            if 'has joined the party.' in message:
+                try:
+                    # Extract the username from the message
+                    username = message.split(' ')[0]
+                    if username != self.bot.username:  # Don't trigger on our own join
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > {username} joined the party, handling warpout...")
+                        # Run the warp sequence in a separate task
+                        asyncio.run_coroutine_threadsafe(
+                            self.client._handle_party_join(username),
+                            self.client.loop
+                        )
+                except Exception as e:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Error handling party join: {e}")
+                    traceback.print_exc()
+
         @javascript.On(self.bot, "end")
         def end(this, reason):
             time.sleep(3)
