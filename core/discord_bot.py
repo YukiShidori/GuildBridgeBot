@@ -315,6 +315,7 @@ class DiscordBridgeBot(commands.Bot):
         if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
             try:
                 # Warp the player
+                await asyncio.sleep(1) # avoid spam
                 await self.mineflayer_bot.chat("/p warp")
                 await asyncio.sleep(1)  # Give time for warp to complete
 
