@@ -54,17 +54,21 @@ class ConfigKey:
             return self.default
         elif not isinstance(value, self.type):
             try:
-                value = self.type(value)
-            except Exception:
+                # Special handling for int conversion to prevent rounding of large numbers
+                if self.type is int and isinstance(value, str):
+                    value = int(value)
+                else:
+                    value = self.type(value)
+            except Exception as e:
                 if use_env_config:
                     raise InvalidConfig(
                         f"Expected {self.type.__name__} for "
                         f"'BRIDGE_{self.basekey.upper()}_{self.key.upper()}',"
-                        f" but got {type(value).__name__}"
+                        f" but got {type(value).__name__} (value: {value}, error: {str(e)})"
                         )
                 raise TypeError(
                     f"Expected {self.type.__name__} for '{self.key}' in section '{self.basekey}' "
-                    f"but got {type(value).__name__}"
+                    f"but got {type(value).__name__} (value: {value}, error: {str(e)})"
                 )
         if isinstance(value, list) and self.list_type:
             for index, item in enumerate(value):
