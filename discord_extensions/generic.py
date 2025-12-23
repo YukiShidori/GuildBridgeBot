@@ -27,7 +27,9 @@ HELP_EMBED.add_field(
           f"``{DiscordConfig.prefix}toggleaccept`` Toggles auto accepting members joining the guild\n"
           f"``{DiscordConfig.prefix}mute <username> <time>`` Mutes the user for a specific time\n"
           f"``{DiscordConfig.prefix}unmute <username>`` Unmutes the user\n"
-          f"``{DiscordConfig.prefix}log [params]`` Shows guild audit logs  - Probably not working",
+          f"``{DiscordConfig.prefix}log [params]`` Shows guild audit logs - Not Working\n"
+          f"``{DiscordConfig.prefix}warpout <user>`` Warps a user out of their current lobby\n",
+
     inline=False
 )
 HELP_EMBED.add_field(
