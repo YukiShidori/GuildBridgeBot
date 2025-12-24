@@ -262,15 +262,27 @@ class DiscordBridgeBot(commands.Bot):
     async def _handle_warpout_command(self, username, is_officer_chat=False):
         """Handle warpout command from in-game chat."""
         if not self.mineflayer_bot:
-            await self.send_message("Bot is not connected to Minecraft!", officer=is_officer_chat)
+            embed = discord.Embed(
+                description="Bot is not connected to Minecraft!",
+                color=discord.Color.red()
+            )
+            await self.send_message(embed=embed, officer=is_officer_chat)
             return
 
         if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
-            await self.send_message("A warpout is already in progress. Please wait until it finishes.", officer=is_officer_chat)
+            embed = discord.Embed(
+                description="A warpout is already in progress. Please wait until it finishes.",
+                color=discord.Color.red()
+            )
+            await self.send_message(embed=embed, officer=is_officer_chat)
             return
 
-        # Send initial message
-        await self.send_message(f"Attempting to warp out {username}...", officer=is_officer_chat)
+        # Send initial message with embed
+        embed = discord.Embed(
+            description=f"Attempting to warp out {username}...",
+            color=discord.Color.blue()
+        )
+        await self.send_message(embed=embed, officer=is_officer_chat)
 
         try:
             # Create future for tracking warpout status
@@ -287,12 +299,23 @@ class DiscordBridgeBot(commands.Bot):
                 )
 
                 if success:
-                    await self.send_message(f"Successfully warped out {username}!", officer=is_officer_chat)
+                    embed = discord.Embed(
+                        description=f"Successfully warped out {username}!",
+                        color=discord.Color.green()
+                    )
                 else:
-                    await self.send_message(f"Could not warp out {username}.", officer=is_officer_chat)
+                    embed = discord.Embed(
+                        description=f"Could not warp out {username}.",
+                        color=discord.Color.red()
+                    )
+                await self.send_message(embed=embed, officer=is_officer_chat)
 
             except asyncio.TimeoutError:
-                await self.send_message(f"Timed out while trying to warp out {username}.", officer=is_officer_chat)
+                embed = discord.Embed(
+                    description=f"Timed out while trying to warp out {username}.",
+                    color=discord.Color.red()
+                )
+                await self.send_message(embed=embed, officer=is_officer_chat)
                 if not self._current_warpout_future.done():
                     self._current_warpout_future.set_result((False, "timeout"))
                 await self.mineflayer_bot.chat("/p leave")
