@@ -293,10 +293,16 @@ class DiscordBridgeBot(commands.Bot):
 
             try:
                 # Wait for the player to join the party or timeout after 30 seconds
-                success = await asyncio.wait_for(
+                # Get the result and ensure it's a tuple (success, message)
+                result = await asyncio.wait_for(
                     self._current_warpout_future,
                     timeout=30.0
                 )
+                # Unpack the result tuple
+                if isinstance(result, tuple) and len(result) == 2:
+                    success = result[0]
+                else:
+                    success = bool(result)
 
                 if success:
                     embed.description = f"Successfully warped out {username}!"
@@ -366,8 +372,9 @@ class DiscordBridgeBot(commands.Bot):
                 # Disband the party
                 await self.mineflayer_bot.chat("/p disband")
 
-                # Set the future as successful
-                self._current_warpout_future.set_result((True, "success"))
+                # Set the future as successful if not already done
+                if not self._current_warpout_future.done():
+                    self._current_warpout_future.set_result((True, "success"))
                 return True
             except Exception as e:
                 print(f"{Color.CYAN}Discord{Color.RESET} > Error in warp sequence: {e}")
