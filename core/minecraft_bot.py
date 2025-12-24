@@ -197,7 +197,51 @@ class MinecraftBotManager:
             if message.startswith("Guild > " + self.bot.username) or message.startswith("Officer > " + self.bot.username):
                 return
 
+            # Check for warpout command in guild/officer chat
             if message.startswith("Guild >") or message.startswith("Officer >"):
+                is_officer = message.startswith("Officer >")
+                chat_prefix = "Officer > " if is_officer else "Guild > "
+
+                # Extract the message content after the prefix
+                message_content = message[len(chat_prefix):].strip()
+
+                # Check if the message is from a player (contains ":") and has the warpout command
+                if ":" in message_content and ("!warpout " in message_content or " warpout " in message_content):
+                    try:
+                        # Get the part after the colon which contains the command
+                        command_part = message_content.split(":", 1)[1].strip()
+
+                        # Check for both "!warpout" and "warpout" commands
+                        if command_part.startswith("!warpout ") or command_part.startswith("warpout "):
+                            # Get the username (everything after the command)
+                            username = command_part.split(" ", 1)[1].strip()
+                            if not username:
+                                raise ValueError("No username provided")
+
+                            # Get the sender's username (before the colon)
+                            sender = message_content.split(":", 1)[0].strip()
+                            # Clean up the sender's name (remove rank and color codes)
+                            sender = re.sub(r'\[.*?\]', '', sender).strip()
+
+                            if SettingsConfig.printChat:
+                                print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected in-game warpout command from {sender} for {username}")
+
+                            # Run the warpout sequence in a separate task
+                            asyncio.run_coroutine_threadsafe(
+                                self.client._handle_warpout_command(username, is_officer),
+                                self.client.loop
+                            )
+                            return
+                    except (IndexError, ValueError) as e:
+                        if SettingsConfig.printChat:
+                            print(f"{Color.GREEN}Minecraft{Color.RESET} > Invalid warpout command format. Use: !warpout <username>")
+                        # Send error message back to the game
+                        self.bot.chat(f"{chat_prefix}Usage: !warpout <username>")
+                        return
+
+                # If not a command, send to Discord
+                self.send_to_discord(message)
+                return
                 # Check for warpout command
                 is_officer = message.startswith("Officer >")
                 chat_prefix = "Officer > " if is_officer else "Guild > "
