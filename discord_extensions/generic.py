@@ -40,7 +40,7 @@ HELP_EMBED.add_field(
           "Override Role: " + (f"<@&{DiscordConfig.overrideRole}>" if DiscordConfig.overrideRole else "❌") + "\n",
     inline=False
 )
-HELP_EMBED.set_footer(text=f"Made by Yuki :3")
+HELP_EMBED.set_footer(text=f"Made by Yuki and Luna :3")
 
 
 class Generic(commands.Cog):

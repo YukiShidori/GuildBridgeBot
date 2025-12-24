@@ -262,27 +262,26 @@ class DiscordBridgeBot(commands.Bot):
     async def _handle_warpout_command(self, username, is_officer_chat=False):
         """Handle warpout command from in-game chat."""
         if not self.mineflayer_bot:
-            embed = discord.Embed(
-                description="Bot is not connected to Minecraft!",
-                color=discord.Color.red()
-            )
-            await self.send_message(embed=embed, officer=is_officer_chat)
+            await self.send_message("Bot is not connected to Minecraft!", officer=is_officer_chat)
             return
 
         if hasattr(self, '_current_warpout_future') and self._current_warpout_future and not self._current_warpout_future.done():
-            embed = discord.Embed(
-                description="A warpout is already in progress. Please wait until it finishes.",
-                color=discord.Color.red()
-            )
-            await self.send_message(embed=embed, officer=is_officer_chat)
+            await self.send_message("A warpout is already in progress. Please wait until it finishes.", officer=is_officer_chat)
             return
 
-        # Send initial message with embed
+        # Send initial message
+        message = await self.send_message(f"Attempting to warp out {username}...", officer=is_officer_chat)
+
+        # Create and send the initial embed
         embed = discord.Embed(
             description=f"Attempting to warp out {username}...",
             color=discord.Color.blue()
         )
-        msg = await self.send_message(embed=embed, officer=is_officer_chat, return_message=True)
+        if hasattr(message, 'edit'):
+            await message.edit(embed=embed)
+        else:
+            # If we can't edit the message (e.g., it's a webhook message), just send a new one
+            await self.send_message(embed=embed, officer=is_officer_chat)
 
         try:
             # Create future for tracking warpout status
@@ -293,17 +292,12 @@ class DiscordBridgeBot(commands.Bot):
 
             try:
                 # Wait for the player to join the party or timeout after 30 seconds
-                # Get the result and ensure it's a tuple (success, message)
-                result = await asyncio.wait_for(
+                success = await asyncio.wait_for(
                     self._current_warpout_future,
                     timeout=30.0
                 )
-                # Unpack the result tuple
-                if isinstance(result, tuple) and len(result) == 2:
-                    success = result[0]
-                else:
-                    success = bool(result)
 
+                # Update the existing embed
                 if success:
                     embed.description = f"Successfully warped out {username}!"
                     embed.color = discord.Color.green()
@@ -311,13 +305,19 @@ class DiscordBridgeBot(commands.Bot):
                     embed.description = f"Could not warp out {username}."
                     embed.color = discord.Color.red()
 
-                await msg.edit(embed=embed)
+                if hasattr(message, 'edit'):
+                    await message.edit(embed=embed)
+                else:
+                    await self.send_message(embed=embed, officer=is_officer_chat)
 
             except asyncio.TimeoutError:
+                # Update the existing embed
                 embed.description = f"Timed out while trying to warp out {username}."
                 embed.color = discord.Color.red()
-                await msg.edit(embed=embed)
-
+                if hasattr(message, 'edit'):
+                    await message.edit(embed=embed)
+                else:
+                    await self.send_message(embed=embed, officer=is_officer_chat)
                 if not self._current_warpout_future.done():
                     self._current_warpout_future.set_result((False, "timeout"))
                 await self.mineflayer_bot.chat("/p leave")
@@ -372,9 +372,8 @@ class DiscordBridgeBot(commands.Bot):
                 # Disband the party
                 await self.mineflayer_bot.chat("/p disband")
 
-                # Set the future as successful if not already done
-                if not self._current_warpout_future.done():
-                    self._current_warpout_future.set_result((True, "success"))
+                # Set the future as successful
+                self._current_warpout_future.set_result((True, "success"))
                 return True
             except Exception as e:
                 print(f"{Color.CYAN}Discord{Color.RESET} > Error in warp sequence: {e}")
