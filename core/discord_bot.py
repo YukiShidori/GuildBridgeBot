@@ -282,7 +282,7 @@ class DiscordBridgeBot(commands.Bot):
             description=f"Attempting to warp out {username}...",
             color=discord.Color.blue()
         )
-        await self.send_message(embed=embed, officer=is_officer_chat)
+        msg = await self.send_message(embed=embed, officer=is_officer_chat, return_message=True)
 
         try:
             # Create future for tracking warpout status
@@ -299,23 +299,19 @@ class DiscordBridgeBot(commands.Bot):
                 )
 
                 if success:
-                    embed = discord.Embed(
-                        description=f"Successfully warped out {username}!",
-                        color=discord.Color.green()
-                    )
+                    embed.description = f"Successfully warped out {username}!"
+                    embed.color = discord.Color.green()
                 else:
-                    embed = discord.Embed(
-                        description=f"Could not warp out {username}.",
-                        color=discord.Color.red()
-                    )
-                await self.send_message(embed=embed, officer=is_officer_chat)
+                    embed.description = f"Could not warp out {username}."
+                    embed.color = discord.Color.red()
+
+                await msg.edit(embed=embed)
 
             except asyncio.TimeoutError:
-                embed = discord.Embed(
-                    description=f"Timed out while trying to warp out {username}.",
-                    color=discord.Color.red()
-                )
-                await self.send_message(embed=embed, officer=is_officer_chat)
+                embed.description = f"Timed out while trying to warp out {username}."
+                embed.color = discord.Color.red()
+                await msg.edit(embed=embed)
+
                 if not self._current_warpout_future.done():
                     self._current_warpout_future.set_result((False, "timeout"))
                 await self.mineflayer_bot.chat("/p leave")
