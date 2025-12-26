@@ -449,7 +449,12 @@ class DiscordBridgeBot(commands.Bot):
         self, username, message, *, officer: bool = False, command: bool = False, head: str = None
     ) -> Union[discord.Message, discord.WebhookMessage, None]:
         await self.send_debug_message("Sending user message")
-        head = ("https://www.mc-heads.net/avatar/" + username) if not head else head
+        if not head:
+            # Properly encode the username for the URL
+            encoded_username = username.split(' ')[0]  # Take only the first part before space
+            encoded_username = re.sub(r'[^\w]', '', encoded_username)  # Remove special characters
+            head = f"https://www.mc-heads.net/avatar/{encoded_username}"
+
         if self.webhook:
             if command:
                 return await self.send_message(
