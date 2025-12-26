@@ -87,9 +87,44 @@ class MinecraftBotManager:
 
 
     def send_to_discord(self, message):
+        if not message:
+            return
+
         if SettingsConfig.printChat:
-            print(f"{Color.GREEN}Minecraft{Color.RESET} > Dispatching to Discord")
-        asyncio.run_coroutine_threadsafe(self.client.send_discord_message(message), self.client.loop)
+            print(f"{Color.GREEN}Minecraft{Color.RESET} > Dispatching to Discord: {message}")
+
+        # Handle guild and officer chat
+        if message.startswith("Guild >") or message.startswith("Officer >"):
+            is_officer = message.startswith("Officer >")
+            chat_prefix = "Officer > " if is_officer else "Guild > "
+
+            # Extract username and message
+            parts = message[len(chat_prefix):].split(":", 1)
+            if len(parts) < 2:
+                return
+
+            username = parts[0].strip()
+            message_content = parts[1].strip()
+
+            # Clean up username (remove rank brackets if present)
+            if "[" in username:
+                username = username.split("]")[-1].strip()
+
+            # Send to Discord with the appropriate type
+            asyncio.run_coroutine_threadsafe(
+                self.client.bridge.send_minecraft_message(
+                    username,
+                    message_content,
+                    "Officer" if is_officer else "General"
+                ),
+                self.client.loop
+            )
+        else:
+            # Original behavior for non-chat messages
+            asyncio.run_coroutine_threadsafe(
+                self.client.send_discord_message(message),
+                self.client.loop
+            )
 
     def oncommands(self):
         message_buffer = []
