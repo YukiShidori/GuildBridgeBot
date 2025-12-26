@@ -636,50 +636,44 @@ class DiscordBridgeBot(commands.Bot):
                     await self.send_user_message(username, message)
 
             elif message.startswith("Officer >"):
-                channel = self.get_channel(DiscordConfig.officerChannel)
-                if channel is None:
-                    return
-
-                if ":" not in message:
-                    # Handle join/leave notifications in officer chat
-                    message_clean = message.replace("Officer >", "")
-                    if "[" in message_clean and "]" in message_clean:
-                        if "]:" in message_clean:
-                            memberusername = message_clean.split("]: ", 1)[1].split(" ")[0]
-                        else:
-                            memberusername = message_clean.split("] ", 1)[1].split(" ")[0]
-                    else:
-                        memberusername = message_clean.split(" ", 2)[1].strip(" :")
-
-                    if self.mineflayer_bot.bot.username in memberusername:
+                try:
+                    # Get officer channel and check if it's configured
+                    channel = self.get_channel(DiscordConfig.officerChannel)
+                    if channel is None:
+                        print(f"{Color.CYAN}Discord{Color.RESET} > Officer channel not configured! Please check DiscordConfig.officerChannel")
                         return
 
-                    if " joined." in message_clean:
-                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0x56F98A)
-                        embed.set_author(name=message_clean.strip(), icon_url=f"https://www.mc-heads.net/avatar/{memberusername}")
-                    else:
-                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0xFF6347)
-                        embed.set_author(name=message_clean.strip(), icon_url=f"https://www.mc-heads.net/avatar/{memberusername}")
-                    await self.send_debug_message("Sending officer player connection message")
-                    await self.send_message(embed=embed, officer=True)
-                else:
-                    # Handle regular officer chat messages
+                    # Match the officer message format
                     match = regex_officer.match(message)
                     if not match:
+                        print(f"{Color.CYAN}Discord{Color.RESET} > Failed to parse officer message: {message}")
                         return
 
                     username, message = match.groups()
-                    if self.mineflayer_bot.bot.username in username:
-                        return
 
-                    # Clean up username (remove rank)
+                    # Skip if message is from the bot itself
+                    if hasattr(self.mineflayer_bot, 'bot') and hasattr(self.mineflayer_bot.bot, 'username'):
+                        if self.mineflayer_bot.bot.username in username:
+                            return
+
+                    # Clean up the username (remove rank and color codes)
                     if "[" in username:
                         username = username.split("]")[1].strip()
-                    else:
-                        username = username.strip()
+                    username = username.strip()
 
+                    # Clean up the message (remove any remaining "Officer > " prefix)
+                    message = message.replace("Officer > ", "").strip()
+
+                    # Debug output
+                    print(f"{Color.CYAN}Discord{Color.RESET} > Sending officer message from {username}: {message}")
+
+                    # Dispatch event and send message to Discord
                     self.dispatch("hypixel_guild_officer_message", username, message)
                     await self.send_user_message(username, message, officer=True)
+
+                except Exception as e:
+                    print(f"{Color.CYAN}Discord{Color.RESET} > Error processing officer message: {e}")
+                    traceback.print_exc()
 
             # Text in log may conflict with other messages, so we do guild log first
             elif "Guild Log" in message:

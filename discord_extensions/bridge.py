@@ -244,28 +244,38 @@ class Bridge(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def online(self, ctx):
+        # Send the command to Minecraft
         await self.bot.mineflayer_bot.chat("/g online")
-        if DiscordConfig.officerChannel == ctx.channel.id:
-            await ctx.reply(
-                embed=discord.Embed(
-                    description=f"Sent the `/guild online` command. Output will appear in <#{DiscordConfig.channel}>.",
-                    color=discord.Color.blurple()
-                ),
-                delete_after=10,
-            )
+
+        # Send a response to Discord
+        response_embed = discord.Embed(
+            description="Fetching online guild members...",
+            color=discord.Color.blue()
+        )
+
+        # If this is in the officer channel, mention that the response will come in guild chat
+        if DiscordConfig.officerChannel and ctx.channel.id == DiscordConfig.officerChannel:
+            response_embed.description += f"\n\nThe response will appear in <#{DiscordConfig.channel}>"
+
+        await ctx.reply(embed=response_embed, delete_after=15)
 
     @commands.command(name="list")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx):
+        # Send the command to Minecraft
         await self.bot.mineflayer_bot.chat("/g list")
-        if DiscordConfig.officerChannel == ctx.channel.id:
-            await ctx.reply(
-                embed=discord.Embed(
-                    description=f"Sent the `/guild list` command. Output will appear in <#{DiscordConfig.channel}>.",
-                    color=discord.Color.blurple()
-                ),
-                delete_after=10,
-            )
+
+        # Send a response to Discord
+        response_embed = discord.Embed(
+            description="Fetching guild member list...",
+            color=discord.Color.blue()
+        )
+
+        # If this is in the officer channel, mention that the response will come in guild chat
+        if DiscordConfig.officerChannel and ctx.channel.id == DiscordConfig.officerChannel:
+            response_embed.description += f"\n\nThe response will appear in <#{DiscordConfig.channel}>"
+
+        await ctx.reply(embed=response_embed, delete_after=15)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
