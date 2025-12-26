@@ -242,92 +242,60 @@ class MinecraftBotManager:
                 # If not a command, send to Discord
                 self.send_to_discord(message)
                 return
-                # Check for warpout command
-                is_officer = message.startswith("Officer >")
-                chat_prefix = "Officer > " if is_officer else "Guild > "
 
-                # Extract the message content (remove the chat prefix)
-                message_content = message[len(chat_prefix):].strip()
+            # Online Command / GEXP Command
+            if (
+                message.startswith("Guild Name: ") or
+                "Top Guild Experience" in message or
+                message.startswith("Created: ")
+            ):
+                message_buffer.clear()
+                self.wait_response = True
+                if SettingsConfig.printChat:
+                    print(f"{Color.GREEN}Minecraft{Color.RESET} > Buffering guild response...")
 
-                # Check for both "!warpout" and "warpout" commands
-                if message_content.startswith("!warpout ") or message_content.startswith("warpout "):
-                    try:
-                        # Get the username (everything after the command)
-                        username = message_content.split(" ", 1)[1].strip()
-                        if not username:
-                            raise ValueError("No username provided")
-
-                        if SettingsConfig.printChat:
-                            print(f"{Color.GREEN}Minecraft{Color.RESET} > Detected in-game warpout command for {username}")
-
-                        # Run the warpout sequence in a separate task
-                        asyncio.run_coroutine_threadsafe(
-                            self.client._handle_warpout_command(username, is_officer),
-                            self.client.loop
-                        )
-                        return
-                    except (IndexError, ValueError) as e:
-                        if SettingsConfig.printChat:
-                            print(f"{Color.GREEN}Minecraft{Color.RESET} > Invalid warpout command format. Use: !warpout <username>")
-                        # Send error message back to the game
-                        self.bot.chat(f"{chat_prefix}Usage: !warpout <username>")
-                        return
-
-                # If not a command, send to Discord
-                self.send_to_discord(message)
-                return
-
-                # Online Command / GEXP Command
-                if (
-                        message.startswith("Guild Name: ") or
-                        "Top Guild Experience" in message or
-                        message.startswith("Created: ")
-                ):
-                    message_buffer.clear()
-                    self.wait_response = True
-                    if SettingsConfig.printChat:
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > Buffering chat...")
-                if message == "-----------------------------------------------------" and self.wait_response:
-                    self.wait_response = False
+            if message == "-----------------------------------------------------" and self.wait_response:
+                self.wait_response = False
+                if message_buffer:  # Only send if we have buffered messages
                     self.send_to_discord("\n".join(message_buffer))
                     message_buffer.clear()
                     if SettingsConfig.printChat:
-                        print(f"{Color.GREEN}Minecraft{Color.RESET} > End of chat buffer")
-                    return
-                if self.wait_response is True:
-                    message_buffer.append(message)
-                    return
+                        print(f"{Color.GREEN}Minecraft{Color.RESET} > End of guild response")
+                return
 
-                if "Unknown command" in message:
-                    self.send_to_discord(message)
-                elif "Click here to accept or type /guild accept " in message:
-                    self.send_to_discord(message)
-                elif " is already in another guild!" in message or \
-                        ("You invited" in message and "to your guild. They have 5 minutes to accept." in message) or \
-                        "You sent an offline invite to " in message or \
-                        " joined the guild!" in message or \
-                        " left the guild!" in message or \
-                        " was promoted from " in message or \
-                        " was demoted from " in message or \
-                        " was kicked from the guild!" in message or \
-                        " was kicked from the guild by " in message or \
-                        "You cannot invite this player to your guild!" in message or \
-                        "Disabled guild join/leave notifications!" in message or \
-                        "Enabled guild join/leave notifications!" in message or \
-                        "You cannot say the same message twice!" in message or \
-                        "You don't have access to the officer chat!" in message or \
-                        "Your guild is full!" in message or \
-                        "is already in your guild!" in message or \
-                        ("has muted" in message and "for" in message) or \
-                        "has unmuted" in message or \
-                        "You're currently guild muted" in message or \
-                        "Guild Log" in message or \
-                        ("You've already invited" in message and "to your guild! Wait for them to accept!" in message) or \
-                        " has requested to join the guild!" in message.lower() or \
-                        "Your mute will expire in " in message or \
-                        "Mute ID: " in message:
-                    # Guild log is sent as one fat message
-                    self.send_to_discord(message)
+            if self.wait_response is True:
+                message_buffer.append(message)
+                return
+
+            # Handle other message types (guild notifications, etc.)
+            if ("Unknown command" in message or
+                "Click here to accept or type /guild accept " in message or
+                " is already in another guild!" in message or
+                ("You invited" in message and "to your guild. They have 5 minutes to accept." in message) or
+                "You sent an offline invite to " in message or
+                " joined the guild!" in message or
+                " left the guild!" in message or
+                " was promoted from " in message or
+                " was demoted from " in message or
+                " was kicked from the guild!" in message or
+                " was kicked from the guild by " in message or
+                "You cannot invite this player to your guild!" in message or
+                "Disabled guild join/leave notifications!" in message or
+                "Enabled guild join/leave notifications!" in message or
+                "You cannot say the same message twice!" in message or
+                "You don't have access to the officer chat!" in message or
+                "Your guild is full!" in message or
+                "is already in your guild!" in message or
+                ("has muted" in message and "for" in message) or
+                "has unmuted" in message or
+                "You're currently guild muted" in message or
+                "Guild Log" in message or
+                ("You've already invited" in message and "to your guild! Wait for them to accept!" in message) or
+                " has requested to join the guild!" in message.lower() or
+                "Your mute will expire in " in message or
+                "Mute ID: " in message):
+                # Guild log and notifications are sent as single messages
+                self.send_to_discord(message)
 
     def send_minecraft_message(self, discord, message, type):
         if type == "General":

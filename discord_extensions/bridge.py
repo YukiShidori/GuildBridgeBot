@@ -244,38 +244,52 @@ class Bridge(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def online(self, ctx):
-        # Send the command to Minecraft
-        await self.bot.mineflayer_bot.chat("/g online")
+        """Shows online guild members"""
+        try:
+            # Send the command to Minecraft
+            await self.bot.mineflayer_bot.chat("/g online")
 
-        # Send a response to Discord
-        response_embed = discord.Embed(
-            description="Fetching online guild members...",
-            color=discord.Color.blue()
-        )
+            # Send a temporary message to let the user know the command was received
+            msg = await ctx.reply(
+                "Fetching online members... This may take a moment.",
+                mention_author=False
+            )
 
-        # If this is in the officer channel, mention that the response will come in guild chat
-        if DiscordConfig.officerChannel and ctx.channel.id == DiscordConfig.officerChannel:
-            response_embed.description += f"\n\nThe response will appear in <#{DiscordConfig.channel}>"
+            # Delete the message after 10 seconds
+            await asyncio.sleep(10)
+            try:
+                await msg.delete()
+            except:
+                pass
 
-        await ctx.reply(embed=response_embed, delete_after=15)
+        except Exception as e:
+            await ctx.send(f" Error executing command: {str(e)}")
+            print(f"Error in online command: {e}")
 
     @commands.command(name="list")
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def _list(self, ctx):
-        # Send the command to Minecraft
-        await self.bot.mineflayer_bot.chat("/g list")
+        """Shows the guild member list"""
+        try:
+            # Send the command to Minecraft
+            await self.bot.mineflayer_bot.chat("/g list")
 
-        # Send a response to Discord
-        response_embed = discord.Embed(
-            description="Fetching guild member list...",
-            color=discord.Color.blue()
-        )
+            # Send a temporary message to let the user know the command was received
+            msg = await ctx.reply(
+                "Fetching guild member list... This may take a moment.",
+                mention_author=False
+            )
 
-        # If this is in the officer channel, mention that the response will come in guild chat
-        if DiscordConfig.officerChannel and ctx.channel.id == DiscordConfig.officerChannel:
-            response_embed.description += f"\n\nThe response will appear in <#{DiscordConfig.channel}>"
+            # Delete the message after 10 seconds
+            await asyncio.sleep(10)
+            try:
+                await msg.delete()
+            except:
+                pass
 
-        await ctx.reply(embed=response_embed, delete_after=15)
+        except Exception as e:
+            await ctx.send(f" Error executing command: {str(e)}")
+            print(f"Error in list command: {e}")
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
