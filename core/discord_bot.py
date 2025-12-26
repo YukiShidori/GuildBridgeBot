@@ -639,15 +639,47 @@ class DiscordBridgeBot(commands.Bot):
                 channel = self.get_channel(DiscordConfig.officerChannel)
                 if channel is None:
                     return
-                username, message = regex_officer.match(message).groups()
-                if self.mineflayer_bot.bot.username in username:
-                    return
-                message = message.replace("Officer > ", "")
-                if "[" in username:
-                    username = username.split("]")[1]
-                username = username.strip()
-                self.dispatch("hypixel_guild_officer_message", username, message)
-                await self.send_user_message(username, message, officer=True)
+
+                if ":" not in message:
+                    # Handle join/leave notifications in officer chat
+                    message_clean = message.replace("Officer >", "")
+                    if "[" in message_clean and "]" in message_clean:
+                        if "]:" in message_clean:
+                            memberusername = message_clean.split("]: ", 1)[1].split(" ")[0]
+                        else:
+                            memberusername = message_clean.split("] ", 1)[1].split(" ")[0]
+                    else:
+                        memberusername = message_clean.split(" ", 2)[1].strip(" :")
+
+                    if self.mineflayer_bot.bot.username in memberusername:
+                        return
+
+                    if " joined." in message_clean:
+                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0x56F98A)
+                        embed.set_author(name=message_clean.strip(), icon_url=f"https://www.mc-heads.net/avatar/{memberusername}")
+                    else:
+                        embed = Embed(timestamp=discord.utils.utcnow(), colour=0xFF6347)
+                        embed.set_author(name=message_clean.strip(), icon_url=f"https://www.mc-heads.net/avatar/{memberusername}")
+                    await self.send_debug_message("Sending officer player connection message")
+                    await self.send_message(embed=embed, officer=True)
+                else:
+                    # Handle regular officer chat messages
+                    match = regex_officer.match(message)
+                    if not match:
+                        return
+
+                    username, message = match.groups()
+                    if self.mineflayer_bot.bot.username in username:
+                        return
+
+                    # Clean up username (remove rank)
+                    if "[" in username:
+                        username = username.split("]")[1].strip()
+                    else:
+                        username = username.strip()
+
+                    self.dispatch("hypixel_guild_officer_message", username, message)
+                    await self.send_user_message(username, message, officer=True)
 
             # Text in log may conflict with other messages, so we do guild log first
             elif "Guild Log" in message:
