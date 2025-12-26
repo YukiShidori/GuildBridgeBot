@@ -662,8 +662,10 @@ class DiscordBridgeBot(commands.Bot):
                             return
 
                     # Clean up the username (remove rank and color codes)
-                    if "[" in username:
+                    if "]" in username:
                         username = username.split("]")[1].strip()
+                    elif " " in username:
+                        username = username.split(" ", 1)[0].strip()
                     username = username.strip()
 
                     # Clean up the message (remove any remaining "Officer > " prefix)
