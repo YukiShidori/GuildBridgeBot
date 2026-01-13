@@ -324,71 +324,69 @@ class Bridge(commands.Cog):
                 delete_after=10,
             )
 
-    # @commands.command()
-    # async def warpout(self, ctx, username):
-    #     """Warps a player out of their current lobby."""
-    #     if not self.bot.mineflayer_bot:
-    #         return await ctx.reply("Bot is not connected to Minecraft!")
+    @commands.command()
+    async def warpout(self, ctx, username):
+        """Warps a player out of their current lobby."""
+        if not self.bot.mineflayer_bot:
+            return await ctx.reply("Bot is not connected to Minecraft!")
 
-        # if hasattr(self.bot, '_current_warpout_future') and self.bot._current_warpout_future and not self.bot._current_warpout_future.done():
-        #     return await ctx.reply(
-        #         embed=discord.Embed(
-        #             description="A warpout is already in progress. Please wait until it finishes.",
-        #             color=discord.Color.red()
-        #         )
-        #     )
+        if hasattr(self.bot, '_current_warpout_future') and self.bot._current_warpout_future and not self.bot._current_warpout_future.done():
+            return await ctx.reply(
+                embed=discord.Embed(
+                    description="A warpout is already in progress. Please wait until it finishes.",
+                    color=discord.Color.red()
+                )
+            )
 
-        # msg = await ctx.reply(
-        #     embed=discord.Embed(
-        #         description=f"Attempting to warp out {username}...",
-        #         color=discord.Color.blurple()
-        #     )
-        # )
+        msg = await ctx.reply(
+            embed=discord.Embed(
+                description=f"Attempting to warp out {username}...",
+                color=discord.Color.blue()
+            )
+        )
 
-        # # Create future for tracking warpout status
-        # self.bot._current_warpout_future = asyncio.Future()
+        # Create future for tracking warpout status
+        self.bot._current_warpout_future = asyncio.Future()
 
-        # try:
-        #     # Send party invite to the player
-        #     await self.bot.mineflayer_bot.chat(f"/p {username}")
+        try:
+            # Send party invite to the player
+            await self.bot.mineflayer_bot.chat(f"/p {username}")
 
-        #     # Wait for the player to join the party or timeout after 30 seconds
-        #     try:
-        #         # Set a timeout for the entire operation
-        #         success = await asyncio.wait_for(
-        #             self.bot._current_warpout_future,
-        #             timeout=30.0
-        #         )
+            # Wait for the player to join the party or timeout after 30 seconds
+            try:
+                # Set a timeout for the entire operation
+                success = await asyncio.wait_for(
+                    self.bot._current_warpout_future,
+                    timeout=30.0
+                )
 
-        #         if success:
-        #             await msg.edit(
-        #                 embed=discord.Embed(
-        #                     description=f"Successfully warped out {username}!",
-        #                     color=discord.Color.green()
-        #                 )
-        #             )
-        #         else:
-        #             await msg.edit(
-        #                 embed=discord.Embed(
-        #                     description=f"Failed to warp out {username}.",
-        #                     color=discord.Color.red()
-        #                 )
-        #             )
+                if success:
+                    embed = discord.Embed(
+                        description=f"Successfully warped out {username}!",
+                        color=discord.Color.green()
+                    )
+                else:
+                    embed = discord.Embed(
+                        description=f"Could not warp out {username}.",
+                        color=discord.Color.red()
+                    )
 
-        #     except asyncio.TimeoutError:
-        #         await msg.edit(
-        #             embed=discord.Embed(
-        #                 description=f"Timed out while trying to warp out {username}.",
-        #                 color=discord.Color.red()
-        #             )
-        #         )
+                await msg.edit(embed=embed)
 
-        # finally:
-        #     # Clean up
-        #     if hasattr(self.bot, '_current_warpout_future'):
-        #         if not self.bot._current_warpout_future.done():
-        #             self.bot._current_warpout_future.cancel()
-        #         self.bot._current_warpout_future = None
+            except asyncio.TimeoutError:
+                await msg.edit(
+                    embed=discord.Embed(
+                        description=f"Timed out while trying to warp out {username}.",
+                        color=discord.Color.red()
+                    )
+                )
+
+        finally:
+            # Clean up
+            if hasattr(self.bot, '_current_warpout_future'):
+                if not self.bot._current_warpout_future.done():
+                    self.bot._current_warpout_future.cancel()
+                self.bot._current_warpout_future = None
 
     @commands.command()
     @commands.cooldown(1, 3, commands.BucketType.channel)
