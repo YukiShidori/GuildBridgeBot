@@ -5,6 +5,8 @@ services:
     container_name: bridge-bot  # optional: set a custom container name
     volumes:
       - .minecraft:/root/.minecraft
+    ports:
+      - "7509:7509"
     environment:
       - BRIDGE_USE_ENV_CONFIG=true
       - BRIDGE_ACCOUNT_EMAIL=

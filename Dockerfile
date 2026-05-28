@@ -11,6 +11,8 @@ RUN npm install -g mineflayer
 # Copy the application code into the container
 COPY . /Bot
 
+EXPOSE 7509
+
 ENV IS_DOCKER=1
 ENV PYTHONUNBUFFERED=1
 
