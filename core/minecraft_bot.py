@@ -138,6 +138,9 @@ class MinecraftBotManager:
 
         @javascript.On(self.bot, "messagestr")
         def chat(message, _, raw_message, *args):
+            if hasattr(self.client, 'webui') and self.client.webui:
+                self.client.webui.broadcast(message)
+
             if self.bot.username is None:
                 return
 

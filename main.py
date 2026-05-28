@@ -8,6 +8,7 @@ from core.colors import Color
 try:
     from core.discord_bot import DiscordBridgeBot
     from core.config import DiscordConfig, SettingsConfig
+    from core.webui import WebUI
 except ModuleNotFoundError as e:
     missing_module = str(e).split("'")[1]
     print(f"Module {missing_module} not found. Installing...")
@@ -24,9 +25,12 @@ if "update" in sys.argv:
     sys.exit(0)
 
 bot = DiscordBridgeBot()
+webui = WebUI()
 
 
 async def main():
+    bot.webui = webui
+    await webui.start()
     async with bot:
         await bot.load_extension("discord_extensions.admin")
         await bot.load_extension("discord_extensions.bridge")

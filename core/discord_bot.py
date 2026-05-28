@@ -122,6 +122,8 @@ class DiscordBridgeBot(commands.Bot):
             print(f"{Color.CYAN}Discord{Color.RESET} > Starting the Minecraft bot...")
             try:
                 self.mineflayer_bot = MinecraftBotManager.createbot(self)
+                if hasattr(self, 'webui') and self.webui:
+                    self.webui.set_chat_callback(self.mineflayer_bot.chat)
             except Exception as e:
                 print(f"{Color.CYAN}Discord{Color.RESET} > Failed to start Minecraft bot: {e}")
                 traceback.print_exc()
