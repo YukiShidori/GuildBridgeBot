@@ -95,7 +95,7 @@ class MinecraftBotManager:
         message_buffer = []
 
         @javascript.On(self.bot, "spawn")
-        def login(this):
+        def login(self):
             if not self._online:
                 self.send_to_discord("Bot Online")
                 print(f"{Color.GREEN}Minecraft{Color.RESET} > Bot is logged in as", self.bot.username)
@@ -104,7 +104,7 @@ class MinecraftBotManager:
 
 
         @javascript.On(self.bot, "end")
-        def end(this, reason):
+        def end(self, reason):
             time.sleep(3)
             print(f"{Color.GREEN}Minecraft{Color.RESET} > Bot offline: {reason}")
             self.send_to_discord("Bot Offline")
@@ -112,7 +112,7 @@ class MinecraftBotManager:
             self.stop(self.auto_restart)
 
         @javascript.On(self.bot, "kicked")
-        def kicked(this, reason, loggedIn):
+        def kicked(self, reason, loggedIn):
             if isinstance(reason, str):
                 try:
                     reason = json.loads(reason)
@@ -132,12 +132,12 @@ class MinecraftBotManager:
                 self.stop(False)
 
         @javascript.On(self.bot, "error")
-        def error(this, reason):
+        def error(self, reason):
             print(reason)
             self.client.dispatch("minecraft_error")
 
         @javascript.On(self.bot, "messagestr")
-        def chat(this, message, _, raw_message, *args):
+        def chat(self, message, _, raw_message, *args):
             if self.bot.username is None:
                 return
 
